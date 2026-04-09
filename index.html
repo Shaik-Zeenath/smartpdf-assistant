@@ -182,6 +182,35 @@ select {
 }
 </style>
 
+    <!-- Add bubbles container -->
+<div id="bubbles"></div>
+
+<script>
+// Generate floating bubbles dynamically
+const bubbleContainer = document.getElementById('bubbles');
+const colors = ['rgba(52,152,219,0.6)', 'rgba(214,193,163,0.5)', 'rgba(255, 255, 255, 0.4)'];
+
+function createBubble() {
+    const bubble = document.createElement('div');
+    bubble.classList.add('bubble');
+    const size = Math.random() * 30 + 20; // 20px - 50px
+    bubble.style.width = size + 'px';
+    bubble.style.height = size + 'px';
+    bubble.style.left = Math.random() * 100 + 'vw';
+    bubble.style.background = colors[Math.floor(Math.random() * colors.length)];
+    bubble.style.animationDuration = (Math.random() * 15 + 10) + 's';
+    bubbleContainer.appendChild(bubble);
+
+    // Remove bubble after animation
+    setTimeout(() => {
+        bubble.remove();
+    }, 25000);
+}
+
+// Generate bubbles periodically
+setInterval(createBubble, 500);
+</script>
+
 <!-- PDF.js Library -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.14.305/pdf.min.js"></script>
 </head>
