@@ -30,7 +30,9 @@ app.post("/chat", async (req, res) => {
 
 console.log("OPENAI RESPONSE:", data);
 
-res.json({ reply: data });
+res.json({
+  reply: data.choices?.[0]?.message?.content || "No response"
+});
 
   } catch (error) {
     res.status(500).json({ error: "Server error" });
