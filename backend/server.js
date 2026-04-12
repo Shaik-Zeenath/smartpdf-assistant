@@ -13,25 +13,25 @@ app.post("/chat", async (req, res) => {
     const userMessage = req.body.message;
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: "gpt-4.1",
-        messages: [
-          { role: "user", content: userMessage }
-        ]
-      })
-    });
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
+  },
+  body: JSON.stringify({
+    model: "gpt-3.5-turbo",
+    messages: [
+      { role: "user", content: userMessage }
+    ]
+  })
+});
 
-    const data = await response.json();
+const data = await response.json();
 
-console.log("OPENAI RESPONSE:", data);
+console.log("OPENAI RAW:", data);
 
 res.json({
-  reply: data.choices?.[0]?.message?.content || "No response"
+  reply: data.choices?.[0]?.message?.content || "AI failed to respond"
 });
 
   } catch (error) {
