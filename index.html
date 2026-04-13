@@ -271,80 +271,94 @@ function addMessage(text, type) {
 
 // Load a single PDF
 async function loadPDF(fileInput, subjectKey) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         const file = fileInput.files[0];
         if (!file) return resolve();
 
         const reader = new FileReader();
-        reader.onload = async function() {
+        reader.onload = async function () {
             const typedArray = new Uint8Array(this.result);
             const loadingTask = pdfjsLib.getDocument(typedArray);
             const pdfDoc = await loadingTask.promise;
+
             pdfDocs[subjectKey] = pdfDoc;
             pdfTexts[subjectKey] = [];
 
             const pagesPromises = [];
+
             for (let i = 1; i <= pdfDoc.numPages; i++) {
                 pagesPromises.push(
                     pdfDoc.getPage(i).then(page =>
                         page.getTextContent().then(content => {
-                            pdfTexts[subjectKey][i - 1] = content.items.map(item => item.str).join(' ');
+                            pdfTexts[subjectKey][i - 1] =
+                                content.items.map(item => item.str).join(" ");
                         })
                     )
                 );
             }
+
             await Promise.all(pagesPromises);
             resolve();
         };
+
         reader.readAsArrayBuffer(file);
     });
 }
 
 // Load all PDFs
 async function loadAllPDFs() {
-    await loadPDF(document.getElementById('pdfSE'), 'SE');
-    await loadPDF(document.getElementById('pdfOS'), 'OS');
-    await loadPDF(document.getElementById('pdfDBMS'), 'DBMS');
-    alert('All PDFs loaded successfully! Now select a subject and ask questions.');
+    await loadPDF(document.getElementById("pdfSE"), "SE");
+    await loadPDF(document.getElementById("pdfOS"), "OS");
+    await loadPDF(document.getElementById("pdfDBMS"), "DBMS");
+
+    alert("PDFs loaded successfully!");
 }
 
-// Search PDF for question in selected subject
-function getPDFAnswer(query, subjectKey) {
-    if (!pdfDocs[subjectKey]) return "Please upload the PDF for this subject first.";
+// 🔥 AI CALL (NEW UPGRADE)
+async function askAI(question, context) {
+    try {
+        const res = await fetch("https://pdf-ai-doubt-solver.onrender.com/ask", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                question: question,
+                context: context
+            })
+        });
 
-    query = query.toLowerCase();
-    const matches = [];
-    pdfTexts[subjectKey].forEach((text, index) => {
-        if (text.toLowerCase().includes(query)) {
-            matches.push({ page: index + 1, snippet: text });
-        }
-    });
-
-    if (matches.length > 0) {
-        const firstMatch = matches[0];
-        const snippet = firstMatch.snippet.substring(0, 300) + "...";
-        return `Found on page ${firstMatch.page}:\n${snippet}`;
-    } else {
-        return "Topic not found in PDF. Try rephrasing your question.";
+        const data = await res.json();
+        return data.answer || "No response from AI";
+    } catch (err) {
+        console.error(err);
+        return "Error connecting to AI backend";
     }
 }
 
 // Send message from user
-function sendMessage() {
+async function sendMessage() {
     const input = document.getElementById("userInput");
     const query = input.value.trim();
     const subjectKey = document.getElementById("subjectSelect").value;
+
     if (!query) return;
     if (!subjectKey) return alert("Please select a subject first.");
 
     addMessage(query, "user");
 
-    setTimeout(() => {
-        const response = getPDFAnswer(query, subjectKey);
-        addMessage(response, "bot");
-    }, 500);
-
     input.value = "";
+
+    // combine PDF text into one context
+    const context = (pdfTexts[subjectKey] || []).join(" ").slice(0, 12000);
+
+    addMessage("Thinking...", "bot");
+
+    const answer = await askAI(query, context);
+
+    // remove "Thinking..." and replace
+    messages.lastChild.remove();
+    addMessage(answer, "bot");
 }
 </script>
 
